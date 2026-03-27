@@ -337,10 +337,12 @@ if (WIN32)
     killbyname.cpp
     )
 
-  set (wsjt_qt_CXXSRCS
-    ${wsjt_qt_CXXSRCS}
-    Transceiver/OmniRigTransceiver.cpp
-    )
+  if (ENABLE_OMNIRIG)
+    set (wsjt_qt_CXXSRCS
+      ${wsjt_qt_CXXSRCS}
+      Transceiver/OmniRigTransceiver.cpp
+      )
+  endif ()
 endif (WIN32)
 
 set (wsjt_FSRCS
@@ -938,6 +940,7 @@ if (WIN32 AND ENABLE_OMNIRIG)
   # Use pre-generated OmniRig files (dumpcpp crashes on Qt5 6.10+)
   set (OMNIRIG_PREGENERATED TRUE)
   message (STATUS "OmniRig support enabled (pre-generated files)")
+  add_definitions (-DENABLE_OMNIRIG)
 endif ()
 
 
@@ -1045,7 +1048,9 @@ find_package (OpenSSL REQUIRED)
 
 if (WIN32)
   add_definitions (-DQT_NEEDS_QTMAIN)
-  find_package (Qt5AxContainer REQUIRED)
+  if (ENABLE_OMNIRIG)
+    find_package (Qt5AxContainer REQUIRED)
+  endif ()
 endif (WIN32)
 
 #
@@ -1528,9 +1533,9 @@ if (OMNIRIG_PREGENERATED)
   target_include_directories (wsjt_qt PRIVATE ${CMAKE_SOURCE_DIR}/Transceiver)
 endif ()
 target_link_libraries (wsjt_qt Hamlib::Hamlib Boost::log qcp Qt5::Widgets Qt5::Network Qt5::Sql Qt5::WebSockets)
-if (WIN32)
+if (WIN32 AND ENABLE_OMNIRIG)
   target_link_libraries (wsjt_qt Qt5::AxContainer Qt5::AxBase)
-endif (WIN32)
+endif (WIN32 AND ENABLE_OMNIRIG)
 
 # build a library of package Qt functionality used in Fortran utilities
 add_library (fort_qt STATIC ${fort_qt_CXXSRCS})

@@ -21,11 +21,6 @@ jobs:
             prefix: mingw-w64-x86_64
             dist_dir: dist_64bit
             installer_suffix: x64
-          - arch: x86
-            msystem: MINGW32
-            prefix: mingw-w64-i686
-            dist_dir: dist_32bit
-            installer_suffix: x86
 
     runs-on: windows-latest
     timeout-minutes: 60
@@ -47,6 +42,7 @@ jobs:
           update: true
           install: >-
             ${{ matrix.prefix }}-toolchain
+            ${{ matrix.prefix }}-gcc-fortran
             ${{ matrix.prefix }}-cmake
             ${{ matrix.prefix }}-qt5-base
             ${{ matrix.prefix }}-qt5-multimedia
@@ -54,11 +50,16 @@ jobs:
             ${{ matrix.prefix }}-qt5-websockets
             ${{ matrix.prefix }}-qt5-svg
             ${{ matrix.prefix }}-qt5-tools
+            ${{ matrix.prefix }}-qt5-activeqt
+            ${{ matrix.prefix }}-portaudio
             ${{ matrix.prefix }}-fftw
-            ${{ matrix.prefix }}-libhamlib
             ${{ matrix.prefix }}-libusb
             ${{ matrix.prefix }}-boost
-            make
+            make autoconf automake libtool git
+
+      - name: Build and install latest compatible Hamlib
+        run: |
+          git clone --single-branch --branch Hamlib-4.7 https://github.com/Hamlib/Hamlib.git hamlib-4.7 && cd hamlib-4.7 && autoreconf -i && ./configure && make -j8 && make install
 
       - name: Configure CMake
         run: |
@@ -66,7 +67,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DWSJT_GENERATE_DOCS=OFF \
             -DWSJT_SKIP_MANPAGES=ON \
-            -DWSJT_BUILD_UTILS=OFF
+            -DWSJT_BUILD_UTILS=OFF \
+            -DENABLE_OMNIRIG=OFF
 
       - name: Build Fortran library (sequential)
         run: mingw32-make -C build -j1 wsjt_fort wsjt_fort_omp
